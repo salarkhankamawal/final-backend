@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 const ticketSchema = new mongoose.Schema(
   {
     ticketNumber: {
@@ -23,9 +22,10 @@ const ticketSchema = new mongoose.Schema(
     },
 
     passenger: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Passenger",
-      required: true,
+      name: { type: String, required: true },
+      age: { type: Number, required: true },
+      email: { type: String, default: "" },
+      passportNumber: { type: String, required: true },
     },
 
     seatNumber: {
@@ -35,12 +35,7 @@ const ticketSchema = new mongoose.Schema(
 
     seatClass: {
       type: String,
-      enum: [
-        "Economy",
-        "Premium Economy",
-        "Business",
-        "First Class",
-      ],
+      enum: ["Economy", "Premium Economy", "Business", "First Class"],
       required: true,
     },
 
@@ -63,36 +58,9 @@ const ticketSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    checkInStatus: {
-      type: Boolean,
-      default: false,
-    },
-
-    boardingPassUrl: {
-      type: String,
-    },
-
-    barcode: {
-      type: String,
-    },
-
-    qrCode: {
-      type: String,
-    },
-
-    fareBasic: {
+    fareAmount: {
       type: Number,
       required: true,
-    },
-
-    refundable: {
-      type: Boolean,
-      default: false,
-    },
-
-    exchangeable: {
-      type: Boolean,
-      default: false,
     },
 
     issuedBy: {

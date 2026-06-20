@@ -5,8 +5,19 @@ const flightSchema = new mongoose.Schema(
     flightNumber: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
+    },
+
+    externalSource: {
+      type: String,
+      enum: ["amadeus", "manual"],
+      default: "manual",
+    },
+
+    externalOfferKey: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
 
     airline: {

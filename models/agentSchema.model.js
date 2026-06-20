@@ -1,4 +1,5 @@
-import mongoose, { model } from "mongoose";
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 
 
@@ -103,10 +104,16 @@ const agentSchema = new mongoose.Schema(
   }
 );
 
-// Auto-generate fullName
-agentSchema.pre("save", function (next) {
+agentSchema.pre("save", async function () {
   this.fullName = `${this.firstName} ${this.lastName}`;
-  next();
+
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
 });
+
+agentSchema.methods.comparePassword = async function (candidate) {
+  return bcrypt.compare(candidate, this.password);
+};
 
 export const Agent = mongoose.model("Agent", agentSchema);

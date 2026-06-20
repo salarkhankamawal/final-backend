@@ -11,7 +11,7 @@ const bookingSchema = new mongoose.Schema(
 
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Customer",
       required: true,
     },
 
@@ -26,35 +26,28 @@ const bookingSchema = new mongoose.Schema(
       ref: "Agent",
     },
 
-    tripType: {
+    passenger: {
+      name: { type: String, required: true, trim: true },
+      age: { type: Number, required: true, min: 0 },
+      email: { type: String, lowercase: true, trim: true, default: "" },
+      passportNumber: { type: String, required: true, trim: true },
+    },
+
+    seatClass: {
       type: String,
-      enum: ["One Way", "Round Trip"],
-      default: "One Way",
+      enum: ["Economy", "Premium Economy", "Business", "First Class"],
+      default: "Economy",
     },
 
-    passengers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Passenger",
+    paymentInfo: {
+      method: {
+        type: String,
+        enum: ["Cash", "Card", "Bank Transfer", "Other"],
+        default: "Cash",
       },
-    ],
-
-    adultCount: {
-      type: Number,
-      default: 1,
-      min: 0,
-    },
-
-    childCount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    infantCount: {
-      type: Number,
-      default: 0,
-      min: 0,
+      amount: { type: Number, required: true },
+      transactionId: { type: String, default: "" },
+      notes: { type: String, default: "" },
     },
 
     totalFare: {
@@ -79,25 +72,13 @@ const bookingSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: [
-        "Pending",
-        "Paid",
-        "Partially Paid",
-        "Failed",
-        "Refunded"
-      ],
+      enum: ["Pending", "Paid", "Partially Paid", "Failed", "Refunded"],
       default: "Pending",
     },
 
     bookingStatus: {
       type: String,
-      enum: [
-        "Pending",
-        "Confirmed",
-        "Ticketed",
-        "Cancelled",
-        "Completed"
-      ],
+      enum: ["Pending", "Confirmed", "Ticketed", "Cancelled", "Completed"],
       default: "Pending",
     },
 
@@ -109,6 +90,17 @@ const bookingSchema = new mongoose.Schema(
     cancelReason: {
       type: String,
       default: "",
+    },
+
+    rescheduledAt: {
+      type: Date,
+      default: null,
+    },
+
+    previousFlight: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Flight",
+      default: null,
     },
   },
   {
