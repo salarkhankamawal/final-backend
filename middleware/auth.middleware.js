@@ -7,6 +7,7 @@ export const protect = async (req, res, next) => {
 
   if (!authHeader?.startsWith("Bearer ")) {
     return next(new ApiError(401, "Not authorized — no token provided"));
+    console.log("No token provided");
   }
 
   const token = authHeader.split(" ")[1];
