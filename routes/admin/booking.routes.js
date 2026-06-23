@@ -6,7 +6,7 @@ import {
   confirmBookingHandler,
   cancelBookingHandler,
   rescheduleBookingHandler,
-} from "../controllers/booking.controller.js";
+} from "../../controllers/booking.controller.js";
 
 const router = Router();
 

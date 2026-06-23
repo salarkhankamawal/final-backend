@@ -5,7 +5,7 @@ import {
   getCustomer,
   updateCustomer,
   getCustomerTicketHistory,
-} from "../controllers/customer.controller.js";
+} from "../../controllers/customer.controller.js";
 
 const router = Router();
 

@@ -3,7 +3,7 @@ import {
   searchFlights,
   getFlightSuggestions,
   getPublicFlight,
-} from "../controllers/publicFlight.controller.js";
+} from "../../controllers/publicFlight.controller.js";
 
 const router = Router();
 

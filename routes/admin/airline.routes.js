@@ -5,7 +5,7 @@ import {
   createAirline,
   updateAirline,
   deleteAirline,
-} from "../controllers/airline.controller.js";
+} from "../../controllers/airline.controller.js";
 
 const router = Router();
 

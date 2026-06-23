@@ -6,7 +6,7 @@ Agent authentication for agency staff. All `/api/admin/*` endpoints require a va
 
 ---
 
-## Register Agent
+## Register Agent5
 
 Create a new agent account. Returns a JWT immediately (auto-login).
 
