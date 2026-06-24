@@ -4,6 +4,7 @@ import {
   fetchAvailableFlights,
   fetchFlightSuggestions,
   getCachedOffer,
+  getFlightDataSource,
 } from "../services/flightOffer.service.js";
 
 export const searchFlights = asyncHandler(async (req, res) => {
@@ -28,9 +29,11 @@ export const searchFlights = asyncHandler(async (req, res) => {
 
   const results = await fetchAvailableFlights(req.query);
 
+  console.log(results)
+
   res.json({
     success: true,
-    source: "amadeus",
+    source: getFlightDataSource(),
     count: results.length,
     data: results,
   });
@@ -53,7 +56,7 @@ export const getFlightSuggestions = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    source: "amadeus",
+    source: getFlightDataSource(),
     data: { exactMatches, suggestions },
   });
 });
@@ -70,7 +73,7 @@ export const getPublicFlight = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    source: "amadeus",
+    source: offer.source || getFlightDataSource(),
     data: {
       ...offer,
       prices: {

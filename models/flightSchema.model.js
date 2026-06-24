@@ -10,7 +10,7 @@ const flightSchema = new mongoose.Schema(
 
     externalSource: {
       type: String,
-      enum: ["amadeus", "manual"],
+      enum: ["mock", "google_flights", "manual"],
       default: "manual",
     },
 

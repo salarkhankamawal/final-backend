@@ -1,12 +1,7 @@
-import crypto from "crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { Airline } from "../models/airlineSchema.model.js";
 import { Flight } from "../models/flightSchema.model.js";
-import {
-  searchFlightOffers,
-  formatIsoDuration,
-  parseDateTime,
-} from "./amadeus.service.js";
+import { searchFlightOffers, getFlightDataSource } from "./flightSearch.service.js";
 
 const OFFER_TTL_MS = 30 * 60 * 1000;
 const offerCache = new Map();
@@ -24,99 +19,6 @@ export const getCachedOffer = (offerId) => {
     return null;
   }
   return entry.offer;
-};
-
-const mapCabinClass = (cabin) => {
-  const map = {
-    ECONOMY: "Economy",
-    PREMIUM_ECONOMY: "Premium Economy",
-    BUSINESS: "Business",
-    FIRST: "First Class",
-  };
-  return map[cabin] || "Economy";
-};
-
-const buildOfferKey = (segments, price) => {
-  const first = segments[0];
-  const last = segments[segments.length - 1];
-  const payload = [
-    first.carrierCode,
-    first.number,
-    first.departure.at,
-    last.arrival.at,
-    price.grandTotal || price.total,
-  ].join("|");
-  return crypto.createHash("sha256").update(payload).digest("hex").slice(0, 24);
-};
-
-export const normalizeAmadeusOffer = (rawOffer) => {
-  const itinerary = rawOffer.itineraries?.[0];
-  if (!itinerary) return null;
-
-  const segments = itinerary.segments || [];
-  const firstSegment = segments[0];
-  const lastSegment = segments[segments.length - 1];
-  if (!firstSegment || !lastSegment) return null;
-
-  const departure = parseDateTime(firstSegment.departure.at);
-  const arrival = parseDateTime(lastSegment.arrival.at);
-  const carrierCode =
-    rawOffer.validatingAirlineCodes?.[0] || firstSegment.carrierCode;
-  const flightNumber = `${firstSegment.carrierCode}${firstSegment.number}`;
-  const price = Number(rawOffer.price?.grandTotal || rawOffer.price?.total || 0);
-  const currency = rawOffer.price?.currency || "USD";
-  const cabin =
-    rawOffer.travelerPricings?.[0]?.fareDetailsBySegment?.[0]?.cabin || "ECONOMY";
-  const seatClass = mapCabinClass(cabin);
-  const bookableSeats = rawOffer.numberOfBookableSeats ?? 9;
-
-  const id = crypto.randomUUID();
-  const offerKey = buildOfferKey(segments, rawOffer.price);
-
-  return {
-    id,
-    source: "amadeus",
-    amadeusOfferId: rawOffer.id,
-    offerKey,
-    flightNumber,
-    carrierCode,
-    airlineName: carrierCode,
-    originAirportCode: firstSegment.departure.iataCode,
-    originAirport: firstSegment.departure.iataCode,
-    originCity: firstSegment.departure.iataCode,
-    originCountry: "",
-    destinationAirportCode: lastSegment.arrival.iataCode,
-    destinationAirport: lastSegment.arrival.iataCode,
-    destinationCity: lastSegment.arrival.iataCode,
-    destinationCountry: "",
-    departureDate: departure.date,
-    departureTime: departure.time,
-    arrivalDate: arrival.date,
-    arrivalTime: arrival.time,
-    duration: formatIsoDuration(itinerary.duration),
-    stops: Math.max(segments.length - 1, 0),
-    segments: segments.map((s) => ({
-      carrierCode: s.carrierCode,
-      flightNumber: `${s.carrierCode}${s.number}`,
-      from: s.departure.iataCode,
-      to: s.arrival.iataCode,
-      departureAt: s.departure.at,
-      arrivalAt: s.arrival.at,
-      duration: formatIsoDuration(s.duration),
-    })),
-    seatClass,
-    economyPrice: price,
-    premiumEconomyPrice: 0,
-    businessPrice: 0,
-    firstClassPrice: 0,
-    currency,
-    availableSeats: bookableSeats,
-    totalSeats: bookableSeats,
-    flightStatus: "Scheduled",
-    availability: bookableSeats > 0 ? "Available" : "Sold Out",
-    lowestPrice: price,
-    rawOffer,
-  };
 };
 
 const applyFilters = (offers, query) => {
@@ -168,7 +70,7 @@ export const fetchAvailableFlights = async (query) => {
     query.destinationLocationCode ||
     query.destinationCity;
 
-  const rawOffers = await searchFlightOffers({
+  const offers = await searchFlightOffers({
     originLocationCode: origin,
     destinationLocationCode: destination,
     departureDate: query.departureDate,
@@ -176,14 +78,10 @@ export const fetchAvailableFlights = async (query) => {
     adults: query.adults || 1,
     max: query.max || 20,
     currencyCode: query.currency,
+    sort: query.sort,
   });
 
-  const normalized = rawOffers
-    .map(normalizeAmadeusOffer)
-    .filter(Boolean)
-    .map(cacheOffer);
-
-  return applyFilters(normalized, query);
+  return applyFilters(offers.map(cacheOffer), query);
 };
 
 export const fetchFlightSuggestions = async (query) => {
@@ -267,12 +165,14 @@ export const persistFlightFromOffer = async (offer) => {
     currency: offer.currency,
     stops: offer.stops,
     flightStatus: "Scheduled",
-    externalSource: "amadeus",
+    externalSource: offer.source || getFlightDataSource(),
     externalOfferKey: offer.offerKey,
   });
 
   return flight.populate("airline");
 };
+
+export { getFlightDataSource };
 
 export const resolveOfferForBooking = async (offerId) => {
   const cached = getCachedOffer(offerId);
