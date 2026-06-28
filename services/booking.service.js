@@ -203,7 +203,7 @@ export const confirmBooking = async (bookingId, agentId) => {
   booking.paymentStatus = booking.paymentStatus === "Pending" ? "Paid" : booking.paymentStatus;
   await booking.save();
 
-  const email = booking.passenger.email || booking.customer?.email;
+  const email = booking.customer?.email || booking.passenger?.email;
   let emailResult = { sent: false, reason: "No email provided" };
 
   if (email) {
