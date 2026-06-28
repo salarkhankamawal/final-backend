@@ -5,6 +5,7 @@ import { Flight } from "../models/flightSchema.model.js";
 import { Booking } from "../models/BookingSchema.model.js";
 import { Ticket } from "../models/ticketSchema.model.js";
 import { sendTicketEmail } from "./email.service.js";
+import { Airline } from "../models/airlineSchema.model.js";
 import {
   resolveOfferForBooking,
   persistFlightFromOffer,
@@ -88,6 +89,24 @@ export const createBooking = async (payload, agentId) => {
 
   flight.availableSeats -= 1;
   await flight.save();
+  // Build a lightweight snapshot of the flight for this booking
+  const airlineDoc = await Airline.findById(flight.airline).select("airlineName iataCode");
+  const flightSnapshot = {
+    flightNumber: flight.flightNumber,
+    originAirportCode: flight.originAirportCode,
+    destinationAirportCode: flight.destinationAirportCode,
+    departureDate: flight.departureDate,
+    departureTime: flight.departureTime,
+    arrivalDate: flight.arrivalDate,
+    arrivalTime: flight.arrivalTime,
+    duration: flight.duration,
+    currency: flight.currency,
+    airline: {
+      id: flight.airline,
+      name: airlineDoc?.airlineName,
+      code: airlineDoc?.iataCode,
+    },
+  };
 
   const booking = await Booking.create({
     bookingReference: generateBookingReference(),
@@ -106,6 +125,7 @@ export const createBooking = async (payload, agentId) => {
     currency: flight.currency,
     paymentStatus: paymentInfo?.method ? "Paid" : "Pending",
     bookingStatus: "Pending",
+    flightSnapshot,
   });
 
   return booking.populate([
@@ -145,6 +165,26 @@ export const confirmBooking = async (bookingId, agentId) => {
   }
 
   const flight = booking.flight;
+  const bookingSnapshot = {
+    bookingReference: booking.bookingReference,
+    passenger: booking.passenger,
+    seatClass: booking.seatClass,
+    grandTotal: booking.grandTotal,
+  };
+
+  const flightSnapshot = booking.flightSnapshot || {
+    flightNumber: flight.flightNumber,
+    originAirportCode: flight.originAirportCode,
+    destinationAirportCode: flight.destinationAirportCode,
+    departureDate: flight.departureDate,
+    departureTime: flight.departureTime,
+    arrivalDate: flight.arrivalDate,
+    arrivalTime: flight.arrivalTime,
+    duration: flight.duration,
+    currency: flight.currency,
+    airline: flight.airline,
+  };
+
   const ticket = await Ticket.create({
     ticketNumber: generateTicketNumber(),
     booking: booking._id,
@@ -155,6 +195,8 @@ export const confirmBooking = async (bookingId, agentId) => {
     fareAmount: booking.grandTotal,
     ticketStatus: "Confirmed",
     issuedBy: agentId,
+    bookingSnapshot,
+    flightSnapshot,
   });
 
   booking.bookingStatus = "Confirmed";

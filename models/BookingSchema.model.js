@@ -102,6 +102,24 @@ const bookingSchema = new mongoose.Schema(
       ref: "Flight",
       default: null,
     },
+
+    // Snapshot of the flight at time of booking to keep a historical record
+    flightSnapshot: {
+      flightNumber: { type: String },
+      originAirportCode: { type: String },
+      destinationAirportCode: { type: String },
+      departureDate: { type: Date },
+      departureTime: { type: String },
+      arrivalDate: { type: Date },
+      arrivalTime: { type: String },
+      duration: { type: String },
+      currency: { type: String },
+      airline: {
+        id: { type: mongoose.Schema.Types.ObjectId, ref: "Airline" },
+        name: { type: String },
+        code: { type: String },
+      },
+    },
   },
   {
     timestamps: true,

@@ -20,10 +20,62 @@ const verifyIdentity = (booking, { phone, passportNumber }) => {
   return matchesPhone || matchesPassport;
 };
 
+const serializeTicket = (ticket) => {
+  if (!ticket) return ticket;
+
+  const booking = ticket.booking;
+  const flight = ticket.flight;
+  const passenger = ticket.passenger || booking?.passenger || {};
+  const airline = flight?.airline;
+  const flightName = airline?.airlineName || flight?.flightNumber || "Flight";
+  const flightDetails = flight
+    ? `${flight.originAirportCode || flight.originAirport || ""}${flight.originAirportCode || flight.originAirport ? " → " : ""}${flight.destinationAirportCode || flight.destinationAirport || ""}`
+    : "";
+
+  return {
+    ...ticket.toObject?.(),
+    _id: ticket._id,
+    id: ticket._id?.toString?.() || ticket.id,
+    bookingId: booking?._id || booking?.id,
+    bookingReference: booking?.bookingReference,
+    passengerName: passenger.name,
+    passenger: {
+      name: passenger.name,
+      email: passenger.email,
+      passportNumber: passenger.passportNumber,
+      age: passenger.age,
+    },
+    phone: booking?.phone || booking?.customer?.phone || "",
+    flightName,
+    flightDetails,
+    route: flightDetails,
+    status: ticket.ticketStatus,
+    amount: ticket.fareAmount || booking?.grandTotal,
+    currency: booking?.currency || "USD",
+    createdAt: ticket.createdAt || ticket.issueDate,
+    created: ticket.createdAt || ticket.issueDate,
+    booking: booking
+      ? {
+          ...booking.toObject?.(),
+          bookingReference: booking.bookingReference,
+          passenger: booking.passenger,
+          phone: booking.phone || booking.customer?.phone || "",
+          status: booking.bookingStatus,
+          amount: booking.grandTotal || booking.totalFare,
+          createdAt: booking.createdAt,
+          created: booking.createdAt,
+          flightName,
+          flightDetails,
+        }
+      : booking,
+    flight,
+  };
+};
+
 export const getTicket = asyncHandler(async (req, res) => {
   const ticket = await Ticket.findById(req.params.id).populate(ticketPopulate);
   if (!ticket) throw new ApiError(404, "Ticket not found");
-  res.json({ success: true, data: ticket });
+  res.json({ success: true, data: serializeTicket(ticket) });
 });
 
 export const printTicket = asyncHandler(async (req, res) => {

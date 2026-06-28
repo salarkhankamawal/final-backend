@@ -15,6 +15,44 @@ const bookingPopulate = [
   { path: "previousFlight", populate: { path: "airline" } },
 ];
 
+const serializeBooking = (booking) => {
+  if (!booking) return booking;
+
+  const flight = booking.flight;
+  const passenger = booking.passenger || {};
+  const airline = flight?.airline;
+  const flightName = airline?.airlineName || flight?.flightNumber || "Flight";
+  const flightDetails = flight
+    ? `${flight.originAirportCode || flight.originAirport || ""}${flight.originAirportCode || flight.originAirport ? " → " : ""}${flight.destinationAirportCode || flight.destinationAirport || ""}`
+    : "";
+
+  return {
+    ...booking.toObject?.() ,
+    id: booking._id?.toString?.() || booking.id,
+    _id: booking._id,
+    bookingReference: booking.bookingReference,
+    customer: booking.customer,
+    flight,
+    flightName,
+    flightDetails,
+    passenger: {
+      name: passenger.name || booking.customer?.name || "",
+      email: passenger.email || booking.customer?.email || "",
+      age: passenger.age,
+      passportNumber: passenger.passportNumber,
+    },
+    phone: booking.phone || booking.customer?.phone || "",
+    status: booking.bookingStatus,
+    bookingStatus: booking.bookingStatus,
+    amount: booking.grandTotal ?? booking.totalFare ?? 0,
+    createdAt: booking.createdAt,
+    created: booking.createdAt,
+    paymentStatus: booking.paymentStatus,
+    seatClass: booking.seatClass,
+    route: flightDetails,
+  };
+};
+
 export const getBookings = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const filter = status ? { bookingStatus: status } : {};
@@ -23,13 +61,17 @@ export const getBookings = asyncHandler(async (req, res) => {
     .populate(bookingPopulate)
     .sort({ createdAt: -1 });
 
-  res.json({ success: true, count: bookings.length, data: bookings });
+  res.json({
+    success: true,
+    count: bookings.length,
+    data: bookings.map(serializeBooking),
+  });
 });
 
 export const getBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id).populate(bookingPopulate);
   if (!booking) throw new ApiError(404, "Booking not found");
-  res.json({ success: true, data: booking });
+  res.json({ success: true, data: serializeBooking(booking) });
 });
 
 export const createBookingHandler = asyncHandler(async (req, res) => {

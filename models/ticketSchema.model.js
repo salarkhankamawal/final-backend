@@ -68,6 +68,27 @@ const ticketSchema = new mongoose.Schema(
       ref: "Agent",
       required: true,
     },
+    // Embed snapshots of the booking and flight at time of ticket issuance
+    bookingSnapshot: {
+      bookingReference: { type: String },
+      passenger: { type: Object },
+      seatClass: { type: String },
+      grandTotal: { type: Number },
+    },
+    flightSnapshot: {
+      flightNumber: { type: String },
+      originAirportCode: { type: String },
+      destinationAirportCode: { type: String },
+      departureDate: { type: Date },
+      departureTime: { type: String },
+      arrivalDate: { type: Date },
+      arrivalTime: { type: String },
+      airline: {
+        id: { type: mongoose.Schema.Types.ObjectId, ref: "Airline" },
+        name: { type: String },
+        code: { type: String },
+      },
+    },
   },
   {
     timestamps: true,
