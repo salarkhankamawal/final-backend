@@ -218,6 +218,17 @@ export const confirmBooking = async (bookingId, agentId) => {
     } catch (err) {
       emailResult = { sent: false, reason: err.message };
     }
+
+    if (emailResult) {
+      console.info("Ticket email result", {
+        to: email,
+        sent: emailResult.sent,
+        accepted: emailResult.accepted,
+        rejected: emailResult.rejected,
+        response: emailResult.response,
+        messageId: emailResult.messageId,
+      });
+    }
   }
 
   return {
